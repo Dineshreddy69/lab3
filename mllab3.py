@@ -5,7 +5,7 @@ from sklearn.metrics import classification_report, accuracy_score
 from sklearn.model_selection import train_test_split
 
 # Load data from the 'Purchase data' worksheet
-file_path = 'C:\\Users\\sai jaswanth\\Desktop\\Machine Learning\\Lab Session1 Data.xlsx'
+file_path = 'Lab Session1 Data.xlsx'
 purchase_data = pd.read_excel(file_path, sheet_name='Purchase data')
 
 # Extract matrices A and C
