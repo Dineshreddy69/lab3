@@ -1,62 +1,59 @@
-import numpy as np
 import pandas as pd
+import numpy as np
+from sklearn.ensemble import RandomForestClassifier
+from sklearn.metrics import classification_report, accuracy_score
 from sklearn.model_selection import train_test_split
-from sklearn.linear_model import LogisticRegression
 
-# Read data from an Excel file
-dataset = pd.read_excel("C:\Users\vangala dinesh reddy\Downloads\Lab Session1 Data.xlsx")
+# Load data from the 'Purchase data' worksheet
+file_path = 'C:\\Users\\sai jaswanth\\Desktop\\Machine Learning\\Lab Session1 Data.xlsx'
+purchase_data = pd.read_excel(file_path, sheet_name='Purchase data')
 
-# Display the first few rows of the dataset
-a = dataset.head()
-print(a)
+# Extract matrices A and C
+matrix_A = purchase_data.iloc[:, 1:4]
+matrix_C = purchase_data.iloc[:, 4]
 
-# Extract features (candies, mangoes, milk packets) and target variable (payment)
-A = dataset[['Candies (#)','Mangoes (Kg)','Milk Packets (#)']].values
-C = dataset[['Payment (Rs)']].values
+# Calculate vector space properties
+dimensionality_vector_space = matrix_A.shape[1]
+num_vectors_in_space = matrix_A.shape[0]
 
-# Display extracted features and target variable
-print(A)
-print(C)
+# Calculate the rank of Matrix A
+rank_of_matrix_A = np.linalg.matrix_rank(matrix_A)
 
-# Get the dimensions of the feature matrix
-rows, cols = A.shape
-print("The Dimensionality of the vector space:", cols)
-print("Number of vectors are:", rows)
+# Calculate the pseudo-inverse of Matrix A
+pseudo_inverse_A = np.linalg.pinv(matrix_A)
 
-# Compute the rank of the feature matrix
-rank = np.linalg.matrix_rank(A)
-print("The rank of matrix A:", rank)
+# Calculate the cost of each product using the pseudo-inverse
+product_costs = np.dot(pseudo_inverse_A, matrix_C)
 
-# Compute the pseudo-inverse of A and calculate individual costs using linear regression
-pinv_A = np.linalg.pinv(A)
-X = pinv_A @ C
-print("The individual cost of a candy is: ", round(X[0][0]))
-print("The individual cost of a mango is: ", round(X[1][0]))
-print("The individual cost of a milk packet is: ", round(X[2][0]))
+# Display results
+print("Matrix A:")
+print(matrix_A)
+print("Matrix C:")
+print(matrix_C)
+print("Dimensionality of the vector space:", dimensionality_vector_space)
+print("Number of vectors in the vector space:", num_vectors_in_space)
+print("Rank of Matrix A:", rank_of_matrix_A)
+print("Cost of each product using Pseudo-Inverse:")
+print(product_costs)
 
-# Define a function for classification using logistic regression
-def classifier(df):
-    # Define features and target variable
-    features = ["Candies (#)", "Mangoes (Kg)", "Milk Packets (#)"]
-    X = df[features]
-    y = df['Category']
-    # Split data into training and testing sets
-    X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, random_state=42)
-    # Initialize and train the logistic regression classifier
-    classifier = LogisticRegression()
-    classifier.fit(X_train, y_train)
-    # Predict categories for all data points
-    df['Predicted Category'] = classifier.predict(X)
-    return df
+# Feature Engineering
+purchase_data['Category'] = np.where(purchase_data['Payment (Rs)'] > 200, 'RICH', 'POOR')
+features = purchase_data[['Candies (#)', 'Mangoes (Kg)', 'Milk Packets (#)']]
+target = purchase_data['Category']
 
-# Load data again into a pandas DataFrame
-df = pd.read_excel('Lab Session1 Data.xlsx')
+# Split the data into training and testing sets
+X_train, X_test, y_train, y_test = train_test_split(features, target, test_size=0.2, random_state=42)
 
-# Create a new column 'Category' based on total payment
-df['Category'] = df['Payment (Rs)'].apply(lambda x: 'RICH' if x > 200 else 'POOR')
+# Choose a classifier (Random Forest as an example)
+classifier = RandomForestClassifier()
 
-# Apply the classifier function to classify customers
-df = classifier(df)
+# Train the model
+classifier.fit(X_train, y_train)
 
-# Display selected columns from the DataFrame
-print(df[['Candies (#)', 'Mangoes (Kg)', 'Milk Packets (#)', 'Payment (Rs)', 'Category', 'Predicted Category']]
+# Make predictions
+y_pred = classifier.predict(X_test)
+
+# Evaluate the model
+print("Classification Report:")
+print(classification_report(y_test, y_pred))
+print("Accuracy:", accuracy_score(y_test, y_pred))
